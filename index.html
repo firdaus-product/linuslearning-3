@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ms-MY">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kemahiran Pemulihan: Kuantiti & Perbandingan (Pembelajaran)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { box-sizing: border-box }
+    .draggable { cursor: grab }
+    .draggable:active { cursor: grabbing }
+    .drop-zone { min-height: 100px; border: 2px dashed #cbd5e1; transition: all .3s ease }
+    .drop-zone.drag-over { border-color:#3b82f6; background:#dbeafe }
+    .bounce-in { animation: bounceIn .6s ease-out }
+    @keyframes bounceIn{0%{transform:scale(.3);opacity:0}50%{transform:scale(1.05)}70%{transform:scale(.9)}100%{transform:scale(1);opacity:1}}
+    .ring-focus{ outline:3px solid #60a5fa; outline-offset:2px; border-radius:.75rem }
+
+    /* Info Bar: sticky + animasi */
+    .info-bar{position:sticky; top:0; z-index:50; border-left-width:8px}
+    .info-pop{animation:infoPop .6s ease}
+    @keyframes infoPop{0%{transform:translateY(-8px);opacity:.2}100%{transform:none;opacity:1}}
+    .glow{box-shadow:0 0 0 3px rgba(250,204,21,.6) inset, 0 8px 24px rgba(0,0,0,.08)}
+
+    /* FAB 🔊 */
+    .speak-fab{
+      position:fixed; right:16px; bottom:16px;
+      width:56px; height:56px; border-radius:9999px;
+      background:#f59e0b; color:#fff; font-size:24px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 10px 25px rgba(0,0,0,.15); transition:transform .12s ease;
+      z-index:60;
+    }
+    .speak-fab:hover{ transform:scale(1.06) }
+    .pulse-ring::before{
+      content:""; position:absolute; inset:-6px; border-radius:9999px;
+      border:3px solid #f59e0b; animation:pulse 1.6s ease-out infinite;
+    }
+    @keyframes pulse{0%{transform:scale(.9);opacity:.8}100%{transform:scale(1.4);opacity:0}}
+    .wiggle{ animation:wiggle .5s ease }
+    @keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen font-sans">
+  <!-- Header -->
+  <header class="bg-white shadow-sm p-4">
+    <h1 class="text-2xl md:text-3xl font-bold text-center text-purple-800">🔢 Kemahiran Pemulihan: Kuantiti & Perbandingan</h1>
+    <p class="text-center text-gray-600 mt-2">Untuk murid 5–9 tahun · Mod pembelajaran (tiada kuiz)</p>
+  </header>
+
+  <!-- Info Bar -->
+  <div id="infoBar" class="info-bar bg-yellow-100 border-l-4 border-yellow-500 p-4 m-4 rounded-lg shadow-sm">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center">
+        <span class="text-2xl mr-3">💡</span>
+        <p id="info-text" aria-live="polite" class="text-xl md:text-2xl font-medium text-yellow-800">
+          Klik mana-mana elemen untuk belajar. Tekan 🔊 untuk dengar.
+        </p>
+      </div>
+      <button id="speak-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full text-xl" title="Baca">
+        🔊
+      </button>
+    </div>
+  </div>
+
+  <!-- Activity Card -->
+  <main class="max-w-6xl mx-auto p-4">
+    <div id="activity-card" class="bg-white rounded-xl shadow-lg p-6 mb-6 min-h-96">
+      <div class="text-center py-20">
+        <div class="text-6xl mb-4">🎯</div>
+        <h2 class="text-2xl font-bold text-gray-700 mb-2">Pilih Aktiviti untuk Mula Belajar</h2>
+        <p class="text-gray-500">Klik butang aktiviti di bawah.</p>
+      </div>
+    </div>
+
+    <!-- Activity Buttons -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Pilih Aktiviti</h3>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <button onclick="loadActivity(1)" class="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg font-medium">🔎 1<br><span class="text-sm">Kenal Kuantiti</span></button>
+        <button onclick="loadActivity(2)" class="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg font-medium">🧺 2<br><span class="text-sm">Kumpul Banyak/Sedikit</span></button>
+        <button onclick="loadActivity(3)" class="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg font-medium">⚖️ 3<br><span class="text-sm">Baca Perbandingan</span></button>
+        <button onclick="loadActivity(4)" class="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-medium">🎚️ 4<br><span class="text-sm">Gerak Slider</span></button>
+        <button onclick="loadActivity(5)" class="bg-pink-500 hover:bg-pink-600 text-white p-3 rounded-lg font-medium">🔢 5<br><span class="text-sm">Nombor & Kuantiti</span></button>
+      </div>
+      <div class="flex gap-3 justify-center">
+        <button onclick="clearActivity()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">🧹 Bersih</button>
+        <button onclick="nextActivity()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium">➡️ Seterusnya</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- FAB 🔊 -->
+  <button id="speak-fab" class="speak-fab pulse-ring" title="Baca">🔊</button>
+
+  <script>
+    /* ====== TTS ====== */
+    const synth = window.speechSynthesis;
+    let isUnlocked = false;
+    let currentInfo = "Klik mana-mana elemen untuk belajar. Tekan 🔊 untuk dengar.";
+    let currentActivity = 0;
+
+    function unlockAudio(){ if(!isUnlocked){ try{ synth.cancel(); }catch{} isUnlocked = true; } }
+    function setInfo(text){
+      currentInfo = text;
+      const textEl = document.getElementById('info-text');
+      const bar    = document.getElementById('infoBar');
+      const fab    = document.getElementById('speak-fab');
+      textEl.textContent = text;
+      bar.classList.remove('info-pop','glow'); void bar.offsetWidth;
+      bar.classList.add('info-pop','glow');
+      fab.classList.add('wiggle'); setTimeout(()=>fab.classList.remove('wiggle'), 500);
+    }
+    function speak(text){
+      unlockAudio(); if(!text) return;
+      try{ synth.cancel(); }catch{}
+      setTimeout(()=>{
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ms-MY'; u.rate = 0.9; u.pitch = 1;
+        const vs = synth.getVoices() || []; const v = vs.find(x=>/ms|MY/i.test(x.lang)) || vs.find(x=>/en/i.test(x.lang));
+        if(v) u.voice = v; synth.speak(u);
+      }, 60);
+    }
+    document.getElementById('speak-btn').addEventListener('click', ()=>speak(currentInfo));
+    document.getElementById('speak-fab').addEventListener('click', ()=>speak(currentInfo));
+    document.addEventListener('click', unlockAudio, {once:true});
+
+    /* ====== Util DnD ====== */
+    function makeDraggable(el, data){
+      el.setAttribute('draggable','true');
+      el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', JSON.stringify(data)); el.classList.add('opacity-50'); });
+      el.addEventListener('dragend', ()=> el.classList.remove('opacity-50'));
+    }
+    function makeDropZone(zone, onDrop){
+      ['dragover','dragenter'].forEach(evt=> zone.addEventListener(evt, e=>{ e.preventDefault(); zone.classList.add('drag-over'); }));
+      ['dragleave','drop'].forEach(evt=> zone.addEventListener(evt, ()=> zone.classList.remove('drag-over')));
+      zone.addEventListener('drop', e=>{
+        e.preventDefault();
+        let data={}; try{ data = JSON.parse(e.dataTransfer.getData('text/plain')); }catch{}
+        onDrop?.(zone, data);
+      });
+    }
+
+    /* ====== Aktiviti 1 — Kenal Kuantiti ====== */
+    function loadActivity1(){
+      const groups = [
+        { emoji:'🍎', count:3, label:'epal' },
+        { emoji:'🐱', count:7, label:'kucing' },
+        { emoji:'⭐', count:2, label:'bintang' },
+        { emoji:'🚗', count:5, label:'kereta' },
+        { emoji:'🌸', count:8, label:'bunga' },
+        { emoji:'🎈', count:1, label:'belon' }
+      ];
+      let html = `
+        <h2 class="text-2xl font-bold text-center mb-6 text-blue-800">🔎 Aktiviti 1: Kenal Kuantiti</h2>
+        <p class="text-center text-gray-600 mb-6">Klik kumpulan untuk belajar konsep <b>BANYAK</b> dan <b>SEDIKIT</b>.</p>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">`;
+      groups.forEach(g=>{
+        html += `
+        <button class="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-transparent hover:border-blue-400"
+                onclick="describeQuantity(${g.count}, '${g.label}', this)">
+          <div class="text-4xl mb-2 flex flex-wrap justify-center gap-1">${g.emoji.repeat(g.count)}</div>
+          <p class="font-medium text-gray-700 capitalize">${g.label}</p>
+          <div class="mt-2 opacity-90"><span class="px-3 py-1 rounded-full text-sm font-medium bg-white text-gray-700">klik untuk penerangan</span></div>
+        </button>`;
+      });
+      html += `</div>`;
+      document.getElementById('activity-card').innerHTML = html;
+      setInfo('Klik kumpulan untuk dengar penerangan “banyak” atau “sedikit” (tekan 🔊).');
+    }
+    function describeQuantity(count, label, el){
+      const tag = (count<=3) ? 'SEDIKIT' : 'BANYAK';
+      setInfo(`${count} ${label} dikira ${tag.toLowerCase()}.`);
+      el.classList.add('ring-focus'); setTimeout(()=> el.classList.remove('ring-focus'), 900);
+    }
+
+    /* ====== Aktiviti 2 — Kumpul Banyak/Sedikit ====== */
+    function loadActivity2(){
+      const items = [
+        { emoji:'🍓', count:2, label:'2 strawberi' },
+        { emoji:'🐝', count:6, label:'6 lebah' },
+        { emoji:'🎾', count:1, label:'1 bola' },
+        { emoji:'🦋', count:8, label:'8 rama-rama' },
+        { emoji:'🍪', count:4, label:'4 biskut' },
+        { emoji:'🌺', count:9, label:'9 bunga' }
+      ];
+      let html = `
+        <h2 class="text-2xl font-bold text-center mb-6 text-green-800">🧺 Aktiviti 2: Kumpul Banyak/Sedikit</h2>
+        <p class="text-center text-gray-600 mb-6">Seret ke mana-mana bakul. Sistem akan letakkan ke kategori yang sesuai.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div id="bin-sedikit" class="drop-zone bg-red-100 border-red-300 rounded-xl p-4 text-center">
+            <h3 class="text-xl font-bold text-red-700 mb-2">🔻 SEDIKIT (1–3)</h3>
+            <div class="items min-h-20 flex flex-wrap gap-2 justify-center"></div>
+          </div>
+          <div id="bin-banyak" class="drop-zone bg-blue-100 border-blue-300 rounded-xl p-4 text-center">
+            <h3 class="text-xl font-bold text-blue-700 mb-2">🔺 BANYAK (4+)</h3>
+            <div class="items min-h-20 flex flex-wrap gap-2 justify-center"></div>
+          </div>
+        </div>
+        <div class="bg-gray-100 rounded-xl p-4">
+          <h4 class="text-lg font-medium text-center mb-4 text-gray-700">Seret item-item ini:</h4>
+          <div class="flex flex-wrap gap-3 justify-center">`;
+      items.forEach(it=>{
+        html += `
+          <div class="draggable bg-white p-3 rounded-lg shadow-md hover:shadow-lg transition-all"
+               draggable="true" data-count="${it.count}" data-label="${it.label}">
+            <div class="text-center">
+              <div class="text-2xl mb-1">${it.emoji.repeat(it.count)}</div>
+              <p class="text-xs text-gray-600">${it.label}</p>
+            </div>
+          </div>`;
+      });
+      html += `</div></div>`;
+      document.getElementById('activity-card').innerHTML = html;
+
+      document.querySelectorAll('.draggable').forEach(el=> makeDraggable(el, {count:el.dataset.count, label:el.dataset.label}));
+      [document.getElementById('bin-sedikit'), document.getElementById('bin-banyak')].forEach(zone=>{
+        makeDropZone(zone, (z,data)=>{
+          const isFew = Number(data.count) <= 3;
+          const target = isFew ? document.getElementById('bin-sedikit') : document.getElementById('bin-banyak');
+          const dragging = document.querySelector('.draggable.opacity-50');
+          if(dragging){
+            dragging.classList.add('bounce-in');
+            target.querySelector('.items').appendChild(dragging);
+            const label = data.label;
+            setInfo(`${label} dikelaskan sebagai ${isFew?'sedikit':'banyak'}. Diletakkan dalam bakul yang sesuai.`);
+          }
+        });
+      });
+      setInfo('Seret item ke mana-mana; sistem akan letakkan ke bakul yang betul.');
+    }
+
+    /* ====== Aktiviti 3 — Baca Perbandingan ====== */
+    function loadActivity3(){
+      const rows = [
+        { left:{emoji:'🍎', count:3}, right:{emoji:'🍊', count:5} },
+        { left:{emoji:'⭐', count:7}, right:{emoji:'🌙', count:4} },
+        { left:{emoji:'🐱', count:6}, right:{emoji:'🐶', count:6} },
+        { left:{emoji:'🚗', count:2}, right:{emoji:'🚌', count:8} }
+      ];
+      let html = `
+        <h2 class="text-2xl font-bold text-center mb-6 text-purple-800">⚖️ Aktiviti 3: Baca Perbandingan</h2>
+        <p class="text-center text-gray-600 mb-6">Klik baris untuk baca perbandingan kumpulan kiri dan kanan.</p>
+        <div class="space-y-4">`;
+      rows.forEach(r=>{
+        html += `
+        <button class="w-full text-left comparison-row bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-xl shadow-md hover:shadow-lg"
+                onclick="readComparison(${r.left.count},${r.right.count},this)">
+          <div class="grid grid-cols-5 gap-4 items-center">
+            <div class="text-center">
+              <div class="text-3xl mb-2">${r.left.emoji.repeat(r.left.count)}</div>
+              <p class="text-sm text-gray-600">${r.left.count} item</p>
+            </div>
+            <div class="text-center text-2xl font-bold text-purple-600">VS</div>
+            <div class="text-center">
+              <div class="text-3xl mb-2">${r.right.emoji.repeat(r.right.count)}</div>
+              <p class="text-sm text-gray-600">${r.right.count} item</p>
+            </div>
+            <div class="col-span-2 text-sm text-gray-700">Klik untuk penerangan perbandingan.</div>
+          </div>
+        </button>`;
+      });
+      html += `</div>`;
+      document.getElementById('activity-card').innerHTML = html;
+      setInfo('Klik mana-mana baris untuk lihat ayat perbandingan (lebih, kurang, atau sama).');
+    }
+    function readComparison(l, r, row){
+      let msg = `Kumpulan kiri ada ${l} dan kumpulan kanan ada ${r}. `;
+      if(l>r) msg += 'Kumpulan kiri lebih banyak.';
+      else if(l<r) msg += 'Kumpulan kiri kurang banyak.';
+      else msg += 'Kedua-dua kumpulan sama banyak.';
+      setInfo(msg);
+      row.classList.add('ring-focus'); setTimeout(()=> row.classList.remove('ring-focus'), 900);
+    }
+
+    /* ====== Aktiviti 4 — GERAK SLIDER KUANTITI (ringkas) ====== */
+    function loadActivity4(){
+  const iconA = '🟠', iconB = '🔵';
+  let valA = 0, valB = 0;
+
+  const html = `
+    <h2 class="text-2xl font-bold text-center mb-3 text-orange-800">🎚️ Aktiviti 4: Gerak Slider Kuantiti</h2>
+    <p class="text-center text-gray-600 mb-4">Gerakkan slider A dan B (0–10). Lihat kuantiti dan perbandingan.</p>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="bg-orange-50 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-orange-800">A: <span id="valA" class="font-extrabold">0</span></h3>
+          <button id="resetA" class="px-3 py-1 rounded-lg bg-white border">Kosongkan</button>
+        </div>
+        <input id="rangeA" type="range" min="0" max="10" value="0" class="w-full accent-orange-500">
+        <div id="iconsA" class="mt-3 flex flex-wrap gap-1 text-2xl"></div>
+      </div>
+
+      <div class="bg-blue-50 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-blue-800">B: <span id="valB" class="font-extrabold">0</span></h3>
+          <button id="resetB" class="px-3 py-1 rounded-lg bg-white border">Kosongkan</button>
+        </div>
+        <input id="rangeB" type="range" min="0" max="10" value="0" class="w-full accent-blue-500">
+        <div id="iconsB" class="mt-3 flex flex-wrap gap-1 text-2xl"></div>
+      </div>
+    </div>
+
+    <div class="text-center mt-4 text-sm text-gray-600">
+      Tip: Tekan 🔊 untuk dengar ayat perbandingan.
+    </div>
+  `;
+  document.getElementById('activity-card').innerHTML = html;
+
+  const rangeA = document.getElementById('rangeA');
+  const rangeB = document.getElementById('rangeB');
+  const valAEl = document.getElementById('valA');
+  const valBEl = document.getElementById('valB');
+  const iconsA = document.getElementById('iconsA');
+  const iconsB = document.getElementById('iconsB');
+
+  function render(){
+    iconsA.textContent = iconA.repeat(valA);
+    iconsB.textContent = iconB.repeat(valB);
+    valAEl.textContent = valA;
+    valBEl.textContent = valB;
+
+    let msg = `Nilai A ialah ${valA} dan nilai B ialah ${valB}. `;
+    if (valA > valB)      msg += 'A lebih banyak daripada B.';
+    else if (valA < valB) msg += 'A kurang banyak daripada B.';
+    else                  msg += 'A dan B sama banyak.';
+    setInfo(msg);
+  }
+
+  rangeA.addEventListener('input', ()=>{ valA = Number(rangeA.value); render(); });
+  rangeB.addEventListener('input', ()=>{ valB = Number(rangeB.value); render(); });
+  document.getElementById('resetA').onclick = ()=>{ valA = 0; rangeA.value = 0; render(); };
+  document.getElementById('resetB').onclick = ()=>{ valB = 0; rangeB.value = 0; render(); };
+
+  render();
+  setInfo('Gerakkan slider A dan B. Tekan 🔊 untuk dengar perbandingan A dan B.');
+}
+
+
+    /* ====== Aktiviti 5 — Nombor & Kuantiti ====== */
+    function loadActivity5(){
+      const pairs = [
+        { number: 3, emoji:'🍎', count:3, label:'tiga epal' },
+        { number: 5, emoji:'⭐', count:5, label:'lima bintang' },
+        { number: 2, emoji:'🐱', count:2, label:'dua kucing' },
+        { number: 4, emoji:'🚗', count:4, label:'empat kereta' },
+        { number: 6, emoji:'🌸', count:6, label:'enam bunga' },
+        { number: 1, emoji:'🎈', count:1, label:'satu belon' }
+      ];
+      let html = `
+        <h2 class="text-2xl font-bold text-center mb-6 text-pink-800">🔢 Aktiviti 5: Nombor & Kuantiti</h2>
+        <p class="text-center text-gray-600 mb-6">Klik nombor untuk sorot kumpulan yang sepadan. Klik kumpulan untuk baca penerangan.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="bg-pink-100 rounded-xl p-4">
+            <h3 class="text-lg font-bold text-pink-700 text-center mb-4">Nombor</h3>
+            <div class="grid grid-cols-3 gap-3">`;
+      pairs.forEach(p=>{
+        html += `
+          <button class="number-btn bg-white hover:bg-pink-200 border-2 border-pink-300 p-4 rounded-lg text-2xl font-bold text-pink-700"
+                  data-number="${p.number}" onclick="highlightByNumber(${p.number})">${p.number}</button>`;
+      });
+      html += `
+            </div>
+          </div>
+          <div class="bg-blue-100 rounded-xl p-4">
+            <h3 class="text-lg font-bold text-blue-700 text-center mb-4">Kumpulan Objek</h3>
+            <div class="grid grid-cols-2 gap-3">`;
+      pairs.forEach(p=>{
+        html += `
+          <button class="group-btn bg-white hover:bg-blue-200 border-2 border-blue-300 p-3 rounded-lg"
+                  data-count="${p.count}" data-label="${p.label}" onclick="describeGroup(${p.count}, '${p.label}', this)">
+            <div class="text-center">
+              <div class="text-2xl mb-1">${p.emoji.repeat(p.count)}</div>
+              <p class="text-xs text-gray-600">${p.label}</p>
+            </div>
+          </button>`;
+      });
+      html += `
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-6 text-sm text-gray-600">Tip: Klik nombor untuk sorot kumpulan yang sama kuantitinya.</div>`;
+      document.getElementById('activity-card').innerHTML = html;
+      setInfo('Klik nombor untuk sorot, atau klik kumpulan untuk penerangan.');
+    }
+    function highlightByNumber(num){
+      document.querySelectorAll('.group-btn').forEach(btn=>{
+        btn.classList.remove('ring-focus');
+        if(Number(btn.dataset.count)===Number(num)) btn.classList.add('ring-focus');
+      });
+      setInfo(`Nombor ${num} mewakili ${num} item. Lihat kumpulan yang disorot.`);
+      document.querySelectorAll('.number-btn').forEach(b=>{
+        if(Number(b.dataset.number)===Number(num)){ b.classList.add('ring-focus'); }
+        else{ b.classList.remove('ring-focus'); }
+      });
+    }
+    function describeGroup(count, label, btn){
+      setInfo(`${label} mempunyai ${count} item.`);
+      btn.classList.add('ring-focus'); setTimeout(()=> btn.classList.remove('ring-focus'), 900);
+    }
+
+    /* ====== Loader / Controls ====== */
+    function loadActivity(num){
+      currentActivity = num;
+      switch(num){
+        case 1: loadActivity1(); break;
+        case 2: loadActivity2(); break;
+        case 3: loadActivity3(); break;
+        case 4: loadActivity4(); break;   // <-- slider ringkas
+        case 5: loadActivity5(); break;
+      }
+    }
+    function clearActivity(){
+      document.getElementById('activity-card').innerHTML = `
+        <div class="text-center py-20">
+          <div class="text-6xl mb-4">🧹</div>
+          <h2 class="text-2xl font-bold text-gray-700 mb-2">Aktiviti Dibersihkan</h2>
+          <p class="text-gray-500">Pilih aktiviti lain untuk terus belajar.</p>
+        </div>`;
+      setInfo('Aktiviti dibersihkan. Pilih aktiviti dan tekan 🔊 untuk dengar.');
+      currentActivity = 0;
+    }
+    function nextActivity(){ const next = currentActivity < 5 ? currentActivity+1 : 1; loadActivity(next); }
+
+    // Init
+    setInfo('Selamat datang! Pilih aktiviti untuk mula belajar tentang kuantiti dan perbandingan. Audio hanya bila tekan 🔊.');
+  </script>
+</body>
+</html>
